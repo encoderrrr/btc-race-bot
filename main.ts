@@ -103,10 +103,15 @@ await runBars({
     }
 
     // Fold in this batch's bar (at most one symbol in this competition).
+    // A bar whose close is not a positive finite number is corrupt data:
+    // it would poison ret60 and the stops, so leave it out of the history
+    // entirely instead of trading on it.
     let fresh = false;
     for (const bar of batch.bars) {
       if (bar.symbol !== SYMBOL) continue;
-      closes.push(Number(bar.c));
+      const c = Number(bar.c);
+      if (!Number.isFinite(c) || c <= 0) continue;
+      closes.push(c);
       fresh = true;
     }
     if (state.warmingUp || !fresh) return [];
